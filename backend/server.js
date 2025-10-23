@@ -57,15 +57,7 @@ app.post('/login/google', async (req, res) => {
     });
     const payload = ticket.getPayload();
 
-    const conn = await getConnection();
-    // Check if user exists
-    const [users] = await conn.execute('SELECT * FROM users WHERE email = ?', [payload.email]);
-    if (users.length === 0) {
-      // User does not exist, insert
-      await conn.execute('INSERT INTO users (name, email) VALUES (?, ?)', [payload.name, payload.email]);
-    }
-    await conn.end();
-
+    // Bypass DB check/insert and allow any email to login
     const user = {
       id: payload.sub,
       name: payload.name,
@@ -79,6 +71,7 @@ app.post('/login/google', async (req, res) => {
     res.status(401).json({ error: 'Google authentication failed' });
   }
 });
+
 
 // POST /referral/submit to submit a new referral
 app.post('/referral/submit', async (req, res) => {
