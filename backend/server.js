@@ -1,0 +1,211 @@
+const express = require('express');
+const mysql = require('mysql2/promise');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const { OAuth2Client } = require('google-auth-library');
+
+const app = express();
+
+const PORT = 4000;
+
+const client = new OAuth2Client('846999197799-pjlguh7e86r56lhdnlddvie7m4ao9fpq.apps.googleusercontent.com');
+
+// Update with your actual MySQL credentials:
+const dbConfig = {
+  host: 'localhost',
+  user: 'root', // your MySQL username
+  password: 'Akshata@27', // your MySQL password
+  database: 'referral_db'
+};
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'restrict-properties');
+  next();
+});
+
+async function getConnection() {
+  return await mysql.createConnection(dbConfig);
+}
+
+// POST /login route for user login
+app.post('/login', async (req, res) => {
+  const { role } = req.body;
+  console.log('Login request received:', req.body);
+  if (!role) {
+    return res.status(400).json({ error: "Role is required" });
+  }
+  // Dummy auth response - replace with real logic as needed
+  const user = { id: "user1", name: "Test User", role };
+  res.json(user);
+});
+
+// POST /login/google for Google Sign-In
+// Example for Google login:
+app.post('/login/google', async (req, res) => {
+  const { idToken } = req.body;
+  if (!idToken) {
+    return res.status(400).json({ error: 'idToken is required' });
+  }
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: '846999197799-pjlguh7e86r56lhdnlddvie7m4ao9fpq.apps.googleusercontent.com',
+    });
+    const payload = ticket.getPayload();
+
+    const conn = await getConnection();
+    // Check if user exists
+    const [users] = await conn.execute('SELECT * FROM users WHERE email = ?', [payload.email]);
+    if (users.length === 0) {
+      // User does not exist, insert
+      await conn.execute('INSERT INTO users (name, email) VALUES (?, ?)', [payload.name, payload.email]);
+    }
+    await conn.end();
+
+    const user = {
+      id: payload.sub,
+      name: payload.name,
+      email: payload.email,
+      picture: payload.picture,
+      role: 'user',
+    };
+
+    res.json(user);
+  } catch (error) {
+    res.status(401).json({ error: 'Google authentication failed' });
+  }
+});
+
+// POST /referral/submit to submit a new referral
+app.post('/referral/submit', async (req, res) => {
+  const { clientName, mobile, expectedCommission } = req.body;
+
+  if (!clientName || !mobile || !expectedCommission) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  try {
+    const conn = await getConnection();
+
+    await conn.execute(
+      'INSERT INTO referrals (clientName, mobile, expectedCommission, status, dateSubmitted) VALUES (?, ?, ?, ?, NOW())',
+      [clientName, mobile, expectedCommission, 'Pending']
+    );
+
+    await conn.end();
+    res.status(200).json({ message: 'Referral submitted successfully' });
+  } catch (error) {
+    console.error('Failed to submit referral:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+// Existing admin/data, referral/status, referral/reminder routes...
+
+app.get('/admin/data', async (req, res) => {
+  try {
+    const conn = await getConnection();
+    const [referrals] = await conn.execute('SELECT * FROM referrals ORDER BY dateSubmitted DESC');
+    const totalReferrals = referrals.length;
+    const paidCount = referrals.filter(r => r.status === 'Paid').length;
+    const pendingCommission = referrals.filter(r => r.status !== 'Paid').reduce((sum, r) => sum + parseFloat(r.expectedCommission), 0);
+    const conversionRate = totalReferrals ? Math.round((paidCount / totalReferrals) * 100) : 0;
+    await conn.end();
+    res.json({ referrals, stats: { totalReferrals, pendingCommission, conversionRate } });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch admin data' });
+  }
+});
+
+app.get('/user/data', async (req, res) => {
+  const userId = req.query.userId;
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' });
+  }
+  try {
+    const conn = await getConnection();
+    // Query referrals, wallet, payouts by userId (customize based on your schema)
+    const [referrals] = await conn.execute('SELECT * FROM referrals ORDER BY dateSubmitted DESC');
+
+    const [walletRows] = await conn.execute('SELECT * FROM commission_wallet WHERE userId = ?', [userId]);
+    const wallet = walletRows[0] || null;
+    const [payouts] = await conn.execute('SELECT * FROM payouts WHERE userId = ?', [userId]);
+    await conn.end();
+
+    res.json({ referrals, wallet, payouts });
+  } catch (error) {
+    console.error('Failed to fetch user data:', error);
+    res.status(500).json({ error: 'Failed to fetch user data' });
+  }
+});
+
+app.post('/referral/status', async (req, res) => {
+  const { referralId, status } = req.body;
+  if (!referralId || !status) {
+    return res.status(400).json({ error: 'referralId and status are required' });
+  }
+  try {
+    const conn = await getConnection();
+    const [result] = await conn.execute('UPDATE referrals SET status = ? WHERE id = ?', [status, referralId]);
+    await conn.end();
+
+    console.log('Referral update result:', result);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Referral not found' });
+    }
+    res.json({ message: 'Status updated' });
+  } catch (error) {
+    console.error('Failed to update referral:', error);
+    res.status(500).json({ error: 'Failed to update status' });
+  }
+});
+
+app.post('/referral/reminder', async (req, res) => {
+  const { referralId, reminderDate, reminderNote } = req.body;
+  if (!referralId) {
+    return res.status(400).json({ error: 'referralId is required' });
+  }
+  try {
+    const conn = await getConnection();
+    const [result] = await conn.execute('UPDATE referrals SET reminderDate = ?, reminderNote = ? WHERE id = ?', [reminderDate || null, reminderNote || null, referralId]);
+    await conn.end();
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Referral not found' });
+    }
+    res.json({ message: 'Reminder updated' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to set reminder' });
+  }
+});
+app.post('/user/profile', async (req, res) => {
+  const { name, email } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ error: 'Name and email are required' });
+  }
+  try {
+    const conn = await getConnection();
+    const [result] = await conn.execute(
+      'UPDATE users SET name = ? WHERE email = ?',
+      [name, email]
+    );
+    await conn.end();
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({ message: 'Profile updated successfully', name, email });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Backend server running on port ${PORT}`);
+});
+
