@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:4000';
+const API_BASE_URL = '';
 
 import type { Service, Referral, CommissionWallet, Payout, User, AdminStats } from '../types';
 import { SERVICES } from '../constants';
@@ -8,7 +8,7 @@ import { ReferralStatus } from '../types';
 
 export const login = (role: 'user' | 'admin'): Promise<User> => {
   // If you implement real auth, update this accordingly
-  return fetch(`${API_BASE_URL}/login`, {
+  return fetch('/login/google',  {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ role }),
