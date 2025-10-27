@@ -89,6 +89,28 @@ app.post('/referral/submit', async (req, res) => {
   }
 });
 
+app.get('/user/data', async (req, res) => {
+  const userId = req.query.userId;
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' });
+  }
+  try {
+    const conn = await getConnection();
+    // Query referrals, wallet, payouts by userId (customize based on your schema)
+    const [referrals] = await conn.execute('SELECT * FROM referrals ORDER BY dateSubmitted DESC');
+
+    const [walletRows] = await conn.execute('SELECT * FROM commission_wallet WHERE userId = ?', [userId]);
+    const wallet = walletRows[0] || null;
+    const [payouts] = await conn.execute('SELECT * FROM payouts WHERE userId = ?', [userId]);
+    await conn.end();
+
+    res.json({ referrals, wallet, payouts });
+  } catch (error) {
+    console.error('Failed to fetch user data:', error);
+    res.status(500).json({ error: 'Failed to fetch user data' });
+  }
+});
+
 // Existing admin/data, referral/status, referral/reminder routes...
 
 app.get('/admin/data', async (req, res) => {
