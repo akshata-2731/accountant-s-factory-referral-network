@@ -81,18 +81,17 @@ app.get('/admin/data', async (req, res) => {
   }
 });
 
+
 app.get('/user/data', async (req, res) => {
-  let userId = req.query.userId;
+  const userId = req.query.userId;
   if (!userId) {
     return res.status(400).json({ error: 'userId is required' });
   }
-  userId = userId.split(':')[0]; // sanitize userId
-
   try {
     const conn = await getConnection();
-    // Fetch all referrals (since no userId link)
+    // Query referrals, wallet, payouts by userId (customize based on your schema)
     const [referrals] = await conn.execute('SELECT * FROM referrals ORDER BY dateSubmitted DESC');
-    // Fetch wallet and payouts filtered by userId
+
     const [walletRows] = await conn.execute('SELECT * FROM commission_wallet WHERE userId = ?', [userId]);
     const wallet = walletRows[0] || null;
     const [payouts] = await conn.execute('SELECT * FROM payouts WHERE userId = ?', [userId]);
@@ -104,7 +103,6 @@ app.get('/user/data', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch user data' });
   }
 });
-
 
 // POST /referral/submit to submit a new referral
 app.post('/referral/submit', async (req, res) => {
