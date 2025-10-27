@@ -1,7 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
-const bodyParser = require('body-parser');
+
 const { OAuth2Client } = require('google-auth-library');
 
 const app = express();
@@ -20,28 +20,19 @@ const dbConfig = {
 
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
-  res.setHeader('Cross-Origin-Opener-Policy', 'restrict-properties');
+  // res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   next();
 });
+
 
 async function getConnection() {
   return await mysql.createConnection(dbConfig);
 }
 
 // POST /login route for user login
-app.post('/login', async (req, res) => {
-  const { role } = req.body;
-  console.log('Login request received:', req.body);
-  if (!role) {
-    return res.status(400).json({ error: "Role is required" });
-  }
-  // Dummy auth response - replace with real logic as needed
-  const user = { id: "user1", name: "Test User", role };
-  res.json(user);
-});
 
 // POST /login/google for Google Sign-In
 // Example for Google login:

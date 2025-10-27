@@ -1,4 +1,7 @@
-const API_BASE_URL = '';
+const API_BASE_URL = "http://localhost:4000"
+
+
+
 
 import type { Service, Referral, CommissionWallet, Payout, User, AdminStats } from '../types';
 import { SERVICES } from '../constants';
@@ -6,29 +9,24 @@ import { ReferralStatus } from '../types';
 
 // --- API Functions using real backend ---
 
-export const login = (role: 'user' | 'admin'): Promise<User> => {
-  // If you implement real auth, update this accordingly
-  return fetch('/login/google',  {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ role }),
-  })
-    .then(res => {
-      if (!res.ok) throw new Error('Login failed');
-      return res.json();
-    });
-};
+
+
 
 export const loginWithGoogle = (idToken: string): Promise<User> => {
   return fetch(`${API_BASE_URL}/login/google`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ idToken }),
-  }).then(res => {
-    if (!res.ok) throw new Error('Google login failed');
+    body: JSON.stringify({ idToken }),  // Must be this exact key
+  }).then(async (res) => {
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Google login failed: ${errorText}`);
+    }
     return res.json();
   });
 };
+
+
 
 export const verifyAccount = (token: string): Promise<User> => {
   return fetch(`${API_BASE_URL}/verify/${token}`)

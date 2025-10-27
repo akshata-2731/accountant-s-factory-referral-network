@@ -67,7 +67,7 @@ export const FAQS: FAQ[] = [
     },
     {
         question: 'When will I receive my reward?',
-        answer: 'Commissions are marked as "Payable" in your wallet as soon as the referred client makes their full payment to us. Payouts are processed on a monthly basis.'
+        answer: 'Commissions are marked as "Payable" in your wallet as soon as the referred client makes their full payment to us. Payouts are processed on a monthly basis after deducting TDS - 5%'
     },
     {
         question: 'Is there a limit on the number of referrals?',
@@ -83,19 +83,19 @@ export const TESTIMONIALS: Testimonial[] = [
     {
         id: 't1',
         quote: 'The referral program is straightforward and rewarding. It’s a great way to earn passive income by leveraging my professional network.',
-        author: 'Sunita Sharma',
-        company: 'Financial Consultant'
+        author: 'Srinivas',
+        company: 'Tax Practitioner'
     },
     {
         id: 't2',
         quote: 'Accountants Factory helped my business stay compliant and focus on growth. Their team is professional and their services are top-notch.',
-        author: 'Rajesh Kumar',
-        company: 'CEO, Tech Innovations Ltd.'
+        author: 'Ashok',
+        company: ' Accountant '
     },
     {
         id: 't3',
         quote: 'I\'ve referred several clients, and the process is seamless. The dashboard makes it easy to track everything from submission to payout.',
-        author: 'Amit Patel',
-        company: 'Startup Mentor'
+        author: 'Praneeth',
+        company: 'Sr. Finance Executive'
     }
 ];

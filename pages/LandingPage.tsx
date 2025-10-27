@@ -3,11 +3,12 @@ import { GoogleLogin } from '@react-oauth/google';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import { SERVICES, FAQS, TESTIMONIALS } from '../constants';
-import type { FAQ, Testimonial } from '../types';
-import { ChevronDownIcon, GoogleIcon } from '../components/icons';
+import type { FAQ, Testimonial, User } from '../types';
+import { ChevronDownIcon } from '../components/icons';
+import { loginWithGoogle } from '../services/mockApiService';
 
 interface LandingPageProps {
-  onLogin: (role: 'user' | 'admin', userInfo?: any) => void;
+  onGoogleLogin: (user: User) => void;
   authMessage: string;
 }
 
@@ -15,33 +16,35 @@ const FAQItem: React.FC<{ faq: FAQ }> = ({ faq }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="border-b border-gray-200 py-4">
-      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex justify-between items-center text-left text-lg font-medium text-brand-gray">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex justify-between items-center text-left text-lg font-medium text-brand-gray"
+      >
         <span>{faq.question}</span>
-        <ChevronDownIcon className={`w-6 h-6 transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDownIcon
+          className={`w-6 h-6 transform transition-transform duration-300 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+        />
       </button>
       {isOpen && <p className="mt-2 text-gray-600 pr-6">{faq.answer}</p>}
     </div>
   );
 };
 
-// Manual JWT decode function without external library
-function parseJwt(token: string) {
-  const base64Url = token.split('.')[1];
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  const jsonPayload = decodeURIComponent(
-    window
-      .atob(base64)
-      .split('')
-      .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-      .join('')
-  );
-  return JSON.parse(jsonPayload);
-}
-
-const LandingPage: React.FC<LandingPageProps> = ({ onLogin, authMessage }) => {
-  const handleGoogleSuccess = (credentialResponse: any) => {
-    const user = parseJwt(credentialResponse.credential);
-    onLogin('user', user);
+const LandingPage: React.FC<LandingPageProps> = ({ onGoogleLogin, authMessage }) => {
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    const idToken = credentialResponse?.credential;
+    if (!idToken) {
+      alert('Google login failed: Missing credential');
+      return;
+    }
+    try {
+      const user = await loginWithGoogle(idToken);
+      onGoogleLogin(user);
+    } catch (error: any) {
+      alert('Login failed: ' + (error.message || 'Unknown error'));
+    }
   };
 
   const handleGoogleError = () => {
@@ -60,18 +63,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, authMessage }) => {
             Join the Accountant's Factory Referral Network. Refer clients for premier financial services and earn exclusive commissions. It's simple, transparent, and rewarding.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4">
-            <GoogleLogin 
-              onSuccess={handleGoogleSuccess} 
-              onError={handleGoogleError} 
-              shape="pill" 
-              theme="outline" 
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              shape="pill"
+              theme="outline"
             />
             {authMessage && (
               <div className="mt-4 text-center max-w-md text-orange-800 bg-orange-100 p-4 rounded-lg border border-orange-200">
                 <p>{authMessage}</p>
               </div>
             )}
-            <button onClick={() => onLogin('admin')} className="text-sm text-gray-500 hover:underline pt-2">
+            <button
+              onClick={() => onGoogleLogin({ role: 'admin' } as User)}
+              className="text-sm text-gray-500 hover:underline pt-2"
+            >
               Admin Login
             </button>
           </div>
@@ -82,7 +88,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, authMessage }) => {
       <section id="how-it-works" className="py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-serif font-bold text-brand-gray">How It Works in 3 Simple Steps</h2>
+            <h2 className="text-3xl sm:text-4xl font-serif font-bold text-brand-gray">
+              How It Works in 3 Simple Steps
+            </h2>
             <p className="mt-4 text-gray-600">A seamless process from referral to reward.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 text-center">
@@ -109,7 +117,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, authMessage }) => {
       <section id="services" className="py-20 bg-slate-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-serif font-bold text-brand-gray">Services You Can Refer</h2>
+            <h2 className="text-3xl sm:text-4xl font-serif font-bold text-brand-gray">Key Services for referral</h2>
             <p className="mt-4 text-gray-600">A wide range of high-demand financial and business services.</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -129,11 +137,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, authMessage }) => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-serif font-bold">Be the Link Between Growth & Compliance</h2>
           <p className="mt-4 max-w-2xl mx-auto">Help businesses thrive by connecting them with the financial expertise they need.</p>
-          <div className="mt-8">
-            <Button onClick={() => onLogin('user')} variant="outline" className="bg-white text-brand-teal border-white hover:bg-gray-100">
-              Refer & Earn Now
-            </Button>
-          </div>
         </div>
       </section>
 
@@ -165,7 +168,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, authMessage }) => {
             <h2 className="text-3xl sm:text-4xl font-serif font-bold text-brand-gray">Frequently Asked Questions</h2>
           </div>
           <div className="max-w-3xl mx-auto">
-            {FAQS.map((faq, index) => <FAQItem key={index} faq={faq} />)}
+            {FAQS.map((faq, index) => (
+              <FAQItem key={index} faq={faq} />
+            ))}
           </div>
         </div>
       </section>
