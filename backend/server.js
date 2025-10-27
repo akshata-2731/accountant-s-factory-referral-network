@@ -18,23 +18,20 @@ const dbConfig = {
 const PORT = process.env.PORT || 3000;
 
 // CORS middleware with explicit origin
-const allowedOrigins = [
-  'https://accountant-s-factory-referral-netwo.vercel.app',
-  'https://accountant-s-factory-referral-netwo-bice.vercel.app',
-];
-
 const corsOptions = {
-  origin: function(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS not allowed'));
-    }
-  },
+  origin: 'https://accountant-s-factory-referral-netwo.vercel.app',
   credentials: true,
 };
 app.use(cors(corsOptions));
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Set Cross-Origin-Opener-Policy header to avoid postMessage block
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
+  next();
+});
 
 async function getConnection() {
   return await mysql.createConnection(dbConfig);
@@ -85,29 +82,6 @@ app.get('/admin/data', async (req, res) => {
 });
 
 
-app.get('/user/data', async (req, res) => {
-  let userId = req.query.userId;
-  if (!userId) {
-    return res.status(400).json({ error: 'userId is required' });
-  }
-  userId = userId.split(':')[0]; // sanitize userId
-  
-  try {
-    const conn = await getConnection();
-    // Fetch all referrals (since no userId link)
-    const [referrals] = await conn.execute('SELECT * FROM referrals ORDER BY dateSubmitted DESC');
-    // Fetch wallet and payouts filtered by userId
-    const [walletRows] = await conn.execute('SELECT * FROM commission_wallet WHERE userId = ?', [userId]);
-    const wallet = walletRows[0] || null;
-    const [payouts] = await conn.execute('SELECT * FROM payouts WHERE userId = ?', [userId]);
-    await conn.end();
-
-    res.json({ referrals, wallet, payouts });
-  } catch (error) {
-    console.error('Failed to fetch user data:', error);
-    res.status(500).json({ error: 'Failed to fetch user data' });
-  }
-});
 
 // POST /referral/submit to submit a new referral
 app.post('/referral/submit', async (req, res) => {
