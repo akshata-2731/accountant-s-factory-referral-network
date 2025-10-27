@@ -46,7 +46,7 @@ export const getServices = (): Promise<Service[]> => {
 };
 
 export const getUserData = (user: User): Promise<{ referrals: Referral[]; wallet: CommissionWallet; payouts: Payout[] }> => {
-  return fetch(`${API_BASE_URL}/user/data?userId=${user.id}`)
+  return fetch(`${API_BASE_URL}/userdata?userId=${user.id}`)
     .then(res => {
       if (!res.ok) throw new Error('Failed to fetch user data');
       return res.json();

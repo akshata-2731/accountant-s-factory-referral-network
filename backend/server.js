@@ -65,22 +65,6 @@ app.post('/login/google', async (req, res) => {
   }
 });
 
-app.get('/admin/data', async (req, res) => {
-  try {
-    const conn = await getConnection();
-    const [referrals] = await conn.execute('SELECT * FROM referrals ORDER BY dateSubmitted DESC');
-    const totalReferrals = referrals.length;
-    const paidCount = referrals.filter(r => r.status === 'Paid').length;
-    const pendingCommission = referrals.filter(r => r.status !== 'Paid').reduce((sum, r) => sum + parseFloat(r.expectedCommission), 0);
-    const conversionRate = totalReferrals ? Math.round((paidCount / totalReferrals) * 100) : 0;
-    await conn.end();
-    res.json({ referrals, stats: { totalReferrals, pendingCommission, conversionRate } });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to fetch admin data' });
-  }
-});
-
 app.get('/user/data', async (req, res) => {
   const userId = req.query.userId;
   if (!userId) {
