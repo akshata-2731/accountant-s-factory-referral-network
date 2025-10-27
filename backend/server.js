@@ -65,27 +65,19 @@ app.post('/login/google', async (req, res) => {
   }
 });
 
-// POST /referral/submit to submit a new referral
-app.post('/referral/submit', async (req, res) => {
-  const { clientName, mobile, expectedCommission } = req.body;
-
-  if (!clientName || !mobile || !expectedCommission) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
-
+app.get('/admin/data', async (req, res) => {
   try {
     const conn = await getConnection();
-
-    await conn.execute(
-      'INSERT INTO referrals (clientName, mobile, expectedCommission, status, dateSubmitted) VALUES (?, ?, ?, ?, NOW())',
-      [clientName, mobile, expectedCommission, 'Pending']
-    );
-
+    const [referrals] = await conn.execute('SELECT * FROM referrals ORDER BY dateSubmitted DESC');
+    const totalReferrals = referrals.length;
+    const paidCount = referrals.filter(r => r.status === 'Paid').length;
+    const pendingCommission = referrals.filter(r => r.status !== 'Paid').reduce((sum, r) => sum + parseFloat(r.expectedCommission), 0);
+    const conversionRate = totalReferrals ? Math.round((paidCount / totalReferrals) * 100) : 0;
     await conn.end();
-    res.status(200).json({ message: 'Referral submitted successfully' });
+    res.json({ referrals, stats: { totalReferrals, pendingCommission, conversionRate } });
   } catch (error) {
-    console.error('Failed to submit referral:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch admin data' });
   }
 });
 
@@ -111,23 +103,34 @@ app.get('/user/data', async (req, res) => {
   }
 });
 
-// Existing admin/data, referral/status, referral/reminder routes...
+// POST /referral/submit to submit a new referral
+app.post('/referral/submit', async (req, res) => {
+  const { clientName, mobile, expectedCommission } = req.body;
 
-app.get('/admin/data', async (req, res) => {
+  if (!clientName || !mobile || !expectedCommission) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
   try {
     const conn = await getConnection();
-    const [referrals] = await conn.execute('SELECT * FROM referrals ORDER BY dateSubmitted DESC');
-    const totalReferrals = referrals.length;
-    const paidCount = referrals.filter(r => r.status === 'Paid').length;
-    const pendingCommission = referrals.filter(r => r.status !== 'Paid').reduce((sum, r) => sum + parseFloat(r.expectedCommission), 0);
-    const conversionRate = totalReferrals ? Math.round((paidCount / totalReferrals) * 100) : 0;
+
+    await conn.execute(
+      'INSERT INTO referrals (clientName, mobile, expectedCommission, status, dateSubmitted) VALUES (?, ?, ?, ?, NOW())',
+      [clientName, mobile, expectedCommission, 'Pending']
+    );
+
     await conn.end();
-    res.json({ referrals, stats: { totalReferrals, pendingCommission, conversionRate } });
+    res.status(200).json({ message: 'Referral submitted successfully' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to fetch admin data' });
+    console.error('Failed to submit referral:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+
+
+// Existing admin/data, referral/status, referral/reminder routes...
+
 
 
 
