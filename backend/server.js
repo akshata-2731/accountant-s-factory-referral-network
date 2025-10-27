@@ -1,12 +1,9 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
-
 const { OAuth2Client } = require('google-auth-library');
 
 const app = express();
-
-
 
 const client = new OAuth2Client('846999197799-pjlguh7e86r56lhdnlddvie7m4ao9fpq.apps.googleusercontent.com');
 
@@ -18,24 +15,29 @@ const dbConfig = {
   database: 'referral_db'
 };
 
-// Middleware
-app.use(cors());
+const PORT = process.env.PORT || 3000;
+
+// CORS middleware with explicit origin
+const corsOptions = {
+  origin: 'https://accountant-s-factory-referral-netwo.vercel.app',
+  credentials: true,
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Set Cross-Origin-Opener-Policy header to avoid postMessage block
 app.use((req, res, next) => {
-  // res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
   next();
 });
-
 
 async function getConnection() {
   return await mysql.createConnection(dbConfig);
 }
 
-// POST /login route for user login
-
 // POST /login/google for Google Sign-In
-// Example for Google login:
 app.post('/login/google', async (req, res) => {
   const { idToken } = req.body;
   if (!idToken) {
@@ -48,7 +50,7 @@ app.post('/login/google', async (req, res) => {
     });
     const payload = ticket.getPayload();
 
-    // Bypass DB check/insert and allow any email to login
+    // Allow any email to login for now, bypass DB checks
     const user = {
       id: payload.sub,
       name: payload.name,
@@ -62,7 +64,6 @@ app.post('/login/google', async (req, res) => {
     res.status(401).json({ error: 'Google authentication failed' });
   }
 });
-
 
 // POST /referral/submit to submit a new referral
 app.post('/referral/submit', async (req, res) => {
@@ -87,7 +88,6 @@ app.post('/referral/submit', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
 
 // Existing admin/data, referral/status, referral/reminder routes...
 
@@ -114,7 +114,6 @@ app.get('/user/data', async (req, res) => {
   }
   try {
     const conn = await getConnection();
-    // Query referrals, wallet, payouts by userId (customize based on your schema)
     const [referrals] = await conn.execute('SELECT * FROM referrals ORDER BY dateSubmitted DESC');
 
     const [walletRows] = await conn.execute('SELECT * FROM commission_wallet WHERE userId = ?', [userId]);
@@ -168,6 +167,7 @@ app.post('/referral/reminder', async (req, res) => {
     res.status(500).json({ error: 'Failed to set reminder' });
   }
 });
+
 app.post('/user/profile', async (req, res) => {
   const { name, email } = req.body;
   if (!name || !email) {
@@ -192,4 +192,3 @@ app.post('/user/profile', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Backend server running on port ${PORT}`);
 });
-
