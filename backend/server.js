@@ -3,9 +3,7 @@ const mysql = require('mysql2/promise');
 const cors = require('cors');
 
 const { OAuth2Client } = require('google-auth-library');
-app.get('/', (req, res) => {
-  res.send('Backend API is running');
-});
+
 const app = express();
 
 const PORT = 4000;
