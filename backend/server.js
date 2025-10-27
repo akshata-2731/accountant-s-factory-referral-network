@@ -64,6 +64,7 @@ app.post('/login/google', async (req, res) => {
     res.status(401).json({ error: 'Google authentication failed' });
   }
 });
+
 app.get('/admin/data', async (req, res) => {
   try {
     const conn = await getConnection();
