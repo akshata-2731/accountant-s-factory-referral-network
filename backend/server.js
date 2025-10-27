@@ -18,20 +18,23 @@ const dbConfig = {
 const PORT = process.env.PORT || 3000;
 
 // CORS middleware with explicit origin
+const allowedOrigins = [
+  'https://accountant-s-factory-referral-netwo.vercel.app',
+  'https://accountant-s-factory-referral-netwo-bice.vercel.app',
+];
+
 const corsOptions = {
-  origin: 'https://accountant-s-factory-referral-netwo.vercel.app',
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'));
+    }
+  },
   credentials: true,
 };
 app.use(cors(corsOptions));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Set Cross-Origin-Opener-Policy header to avoid postMessage block
-app.use((req, res, next) => {
-  res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
-  next();
-});
 
 async function getConnection() {
   return await mysql.createConnection(dbConfig);
