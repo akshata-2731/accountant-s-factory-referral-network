@@ -9,10 +9,11 @@ const client = new OAuth2Client('846999197799-pjlguh7e86r56lhdnlddvie7m4ao9fpq.a
 
 // Update with your actual MySQL credentials:
 const dbConfig = {
-  host: 'localhost',
+  host: 'interchange.proxy.rlwy.net:18524',
   user: 'root', // your MySQL username
-  password: 'Akshata@27', // your MySQL password
-  database: 'referral_db'
+  password: 'XfAdFrtTrfZffiUqqfebVsuMFJAIEmFD', // your MySQL password
+  database: 'railway',
+  port: 18524
 };
 
 const PORT = process.env.PORT || 3000;
