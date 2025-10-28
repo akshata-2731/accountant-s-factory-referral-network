@@ -9,7 +9,7 @@ const client = new OAuth2Client('846999197799-pjlguh7e86r56lhdnlddvie7m4ao9fpq.a
 
 // Update with your actual MySQL credentials:
 const dbConfig = {
-  host: 'interchange.proxy.rlwy.net:18524',
+  host: 'interchange.proxy.rlwy.net',
   user: 'root', // your MySQL username
   password: 'XfAdFrtTrfZffiUqqfebVsuMFJAIEmFD', // your MySQL password
   database: 'railway',
