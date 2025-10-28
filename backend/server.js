@@ -6,21 +6,24 @@ const { OAuth2Client } = require('google-auth-library');
 const app = express();
 
 const client = new OAuth2Client('846999197799-pjlguh7e86r56lhdnlddvie7m4ao9fpq.apps.googleusercontent.com');
-
+const fs = require('fs');
 // Update with your actual MySQL credentials:
 const dbConfig = {
-  host: 'interchange.proxy.rlwy.net',
-  user: 'root', // your MySQL username
-  password: 'XfAdFrtTrfZffiUqqfebVsuMFJAIEmFD', // your MySQL password
-  database: 'railway',
-  port: 18524
+  host: 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com',
+  user: '47J2prvPoFhpbTN.root', // your MySQL username
+  password: 'dZl53tw8f22fO0Wx', // your MySQL password
+  database: 'reffral_db',
+  port: 4000,
+  ssl: {
+    ca: fs.readFileSync('C:/Users/hp/Downloads/isrgrootx1.pem')
+  }
 };
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 
 // CORS middleware with explicit origin
 const corsOptions = {
-  origin: 'https://accountant-s-factory-referral-network-production.up.railway.app',
+  origin: 'http://localhost:3000',
   credentials: true,
 };
 app.use(cors(corsOptions));

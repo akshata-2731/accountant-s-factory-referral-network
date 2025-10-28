@@ -49,7 +49,10 @@ const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, unreadCount }) =
                  {currentUser.role === 'user' && (
                     <a href="#/dashboard" className="font-semibold text-brand-teal hover:underline">Dashboard</a>
                  )}
-                 <span className="text-sm text-gray-600 hidden sm:block">Welcome, {currentUser.name.split(' ')[0]}</span>
+                 <span className="text-sm text-gray-600 hidden sm:block">
+  Welcome, {currentUser?.name ? currentUser.name.split(' ')[0] : 'User'}
+</span>
+
                  <a href="#/profile" title="My Profile" className="text-gray-600 hover:text-brand-teal flex items-center gap-1">
                     <UserCircleIcon className="w-6 h-6" />
                     <span className="text-sm font-medium hidden md:inline">My Profile</span>
