@@ -20,7 +20,7 @@ const PORT = process.env.PORT || 3000;
 
 // CORS middleware with explicit origin
 const corsOptions = {
-  origin: 'https://accountant-s-factory-referral-netwo.vercel.app',
+  origin: 'https://accountant-s-factory-referral-network-production.up.railway.app',
   credentials: true,
 };
 app.use(cors(corsOptions));
